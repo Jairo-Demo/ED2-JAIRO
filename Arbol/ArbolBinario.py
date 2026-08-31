@@ -128,6 +128,75 @@ class ArbolBinario:
             self.__post_orden_rec(nodo.get_derecho(), resultado)
             resultado.append(nodo.get_dato())
 
+    # ==========================================
+    # CONSTRUIR DESDE EXPRESIÓN INFIJA (POSFIJA)
+    # ==========================================
+    def construir_desde_infija(self, expresion):
+        """Construye árbol desde expresión infija. Ej: a + b * c"""
+        tokens = list(expresion.replace(" ", ""))
+        postfija = self._infija_a_postfija(tokens)
+        self.__raiz = self._arbol_desde_postfija(postfija)
+        self.__cantidad = self._contar(self.__raiz)
+
+    def _infija_a_postfija(self, tokens):
+        """Convierte infija a postfija con PILA"""
+        prec = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3}
+        salida, pila = [], []
+        
+        for t in tokens:
+            if t.isalnum():  # Operando (letra o número)
+                salida.append(t)
+            elif t == '(':
+                pila.append(t)
+            elif t == ')':
+                while pila and pila[-1] != '(':
+                    salida.append(pila.pop())
+                pila.pop()
+            elif t in prec:  # Operador
+                while pila and pila[-1] != '(' and prec.get(pila[-1], 0) >= prec[t]:
+                    salida.append(pila.pop())
+                pila.append(t)
+        
+        while pila:
+            salida.append(pila.pop())
+        return salida
+
+    def _arbol_desde_postfija(self, postfija):
+        """Construye árbol desde postfija con PILA"""
+        pila = []
+        for t in postfija:
+            if t.isalnum():
+                pila.append(Nodo(t))
+            else:
+                nodo = Nodo(t)
+                nodo.set_derecho(pila.pop())
+                nodo.set_izquierdo(pila.pop())
+                pila.append(nodo)
+        return pila[-1] if pila else None
+
+    def _contar(self, nodo):
+        return 0 if nodo is None else 1 + self._contar(nodo.get_izquierdo()) + self._contar(nodo.get_derecho())
+
+    # ==========================================
+    # EXPRESIONES (USAMOS LOS DE ORDEN)
+    # ==========================================
+    def obtener_postfija(self):
+        return " ".join(self.post_orden())
+
+    def obtener_prefija(self):
+        return " ".join(self.pre_orden())
+
+    def obtener_infija(self):
+        return self.__infija_rec(self.__raiz)
+
+    def __infija_rec(self, nodo):
+        if nodo is None:
+            return ""
+        if nodo.es_hoja():
+            return str(nodo.get_dato())
+        return f"({self.__infija_rec(nodo.get_izquierdo())} {nodo.get_dato()} {self.__infija_rec(nodo.get_derecho())})"
+
+
     # ------------------------------------------------------------------
     # Imprimir
     # ------------------------------------------------------------------

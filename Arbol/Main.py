@@ -25,5 +25,28 @@ def main():
     print(f"PostOrden : {arbol.post_orden()}")
 
 
+    print("=" * 40)
+    print("ARBOL DE EXPRESIONES")
+    print("Infija -> Postfija")
+    print("=" * 40)
+    print("Escribe 'salir' para terminar")
+    print("-" * 40)
+
+    while True:
+        exp = input("Expresion infija: ")
+        
+        if exp == "salir":
+            break
+        
+        arbol = ArbolBinario()
+        arbol.construir_desde_infija(exp)
+        
+        print("Postfija:", arbol.obtener_postfija())
+        print("Prefija:", arbol.obtener_prefija())
+        print("")
+        arbol.imprimir()
+        print("-" * 30)
+
+
 if __name__ == "__main__":
     main()
