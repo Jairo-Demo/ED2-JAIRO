@@ -1,7 +1,7 @@
+# ================================================================
 # models/modelo.py
-# MODELO: Nodo y ArbolBinario juntos en un solo archivo, porque Nodo
-# es una clase auxiliar que solo usa ArbolBinario internamente.
-# =====================================================================
+# MODELO: Nodo y ArbolBinario con ELIMINACIÓN (sucesor inorden)
+# ================================================================
 
 
 class Nodo:
@@ -130,7 +130,7 @@ class ArbolBinario:
         return self.__buscar_rec(nodo.get_derecho(), dato)
 
     # ------------------------------------------------------------------
-    # InOrden - Izquierdo -> Raíz -> Derecho
+    # Recorridos
     # ------------------------------------------------------------------
 
     def in_orden(self) -> list:
@@ -145,10 +145,6 @@ class ArbolBinario:
             resultado.append(nodo.get_dato())
             self.__in_orden_rec(nodo.get_derecho(), resultado)
 
-    # ------------------------------------------------------------------
-    # PreOrden - Raíz -> Izquierdo -> Derecho
-    # ------------------------------------------------------------------
-
     def pre_orden(self) -> list:
         """Recorrido pre-orden: raíz -> izq -> der."""
         resultado = []
@@ -160,10 +156,6 @@ class ArbolBinario:
             resultado.append(nodo.get_dato())
             self.__pre_orden_rec(nodo.get_izquierdo(), resultado)
             self.__pre_orden_rec(nodo.get_derecho(), resultado)
-
-    # ------------------------------------------------------------------
-    # PostOrden - Izquierdo -> Derecho -> Raíz
-    # ------------------------------------------------------------------
 
     def post_orden(self) -> list:
         """Recorrido post-orden: izq -> der -> raíz."""
@@ -177,9 +169,108 @@ class ArbolBinario:
             self.__post_orden_rec(nodo.get_derecho(), resultado)
             resultado.append(nodo.get_dato())
 
-    # ==========================================
-    # CONSTRUIR DESDE EXPRESION INFIJA (POSFIJA)
-    # ==========================================
+    # ================================================================
+    # ELIMINACIÓN (NUEVO - con sucesor inorden)
+    # ================================================================
+
+    def eliminar(self, dato) -> bool:
+        """
+        Elimina un nodo con el dato dado usando el SUCESOR INORDEN.
+
+        Casos:
+            1. Nodo es hoja (sin hijos) → eliminación directa.
+            2. Nodo tiene 1 hijo → el hijo ocupa su lugar.
+            3. Nodo tiene 2 hijos → se reemplaza con el SUCESOR INORDEN
+               (el nodo más pequeño del subárbol derecho).
+
+        Args:
+            dato: El dato a eliminar.
+
+        Returns:
+            bool: True si eliminó, False si el dato no existía.
+
+        Complejidad: O(h) donde h = altura del árbol.
+        """
+        if not self.buscar(dato):
+            return False
+
+        self.__raiz = self.__eliminar_rec(self.__raiz, dato)
+        self.__cantidad -= 1
+        return True
+
+    def __eliminar_rec(self, nodo: Nodo, dato) -> Nodo:
+        """
+        Auxiliar recursivo para eliminar.
+        Usa el SUCESOR INORDEN para el caso de 2 hijos.
+        """
+        if nodo is None:
+            return None
+
+        # ---- 1. BUSCAR EL NODO A ELIMINAR ----
+        if dato < nodo.get_dato():
+            nodo.set_izquierdo(self.__eliminar_rec(nodo.get_izquierdo(), dato))
+        elif dato > nodo.get_dato():
+            nodo.set_derecho(self.__eliminar_rec(nodo.get_derecho(), dato))
+        else:
+            # ---- 2. NODO ENCONTRADO ----
+
+            # CASO 1: Nodo HOJA (sin hijos)
+            if nodo.get_izquierdo() is None and nodo.get_derecho() is None:
+                return None
+
+            # CASO 2a: Solo tiene hijo DERECHO
+            if nodo.get_izquierdo() is None:
+                return nodo.get_derecho()
+
+            # CASO 2b: Solo tiene hijo IZQUIERDO
+            if nodo.get_derecho() is None:
+                return nodo.get_izquierdo()
+
+            # CASO 3: Tiene DOS HIJOS → usar SUCESOR INORDEN
+            # El sucesor inorden es el nodo más a la izquierda del subárbol derecho
+            sucesor = self.__minimo_nodo(nodo.get_derecho())
+
+            # Copiar el dato del sucesor al nodo actual
+            nodo.set_dato(sucesor.get_dato())
+
+            # Eliminar el sucesor del subárbol derecho
+            nodo.set_derecho(self.__eliminar_rec(
+                nodo.get_derecho(), sucesor.get_dato()))
+
+        return nodo
+
+    def __minimo_nodo(self, nodo: Nodo) -> Nodo:
+        """
+        Retorna el nodo con el valor MÍNIMO del subárbol.
+        El mínimo siempre está en el nodo más a la izquierda.
+        """
+        actual = nodo
+        while actual.get_izquierdo() is not None:
+            actual = actual.get_izquierdo()
+        return actual
+
+    # ------------------------------------------------------------------
+    # Mínimo y Máximo (para consultas)
+    # ------------------------------------------------------------------
+
+    def minimo(self):
+        """Retorna el valor mínimo del árbol."""
+        if self.esta_vacio():
+            raise ValueError("El árbol está vacío")
+        return self.__minimo_nodo(self.__raiz).get_dato()
+
+    def maximo(self):
+        """Retorna el valor máximo del árbol."""
+        if self.esta_vacio():
+            raise ValueError("El árbol está vacío")
+        actual = self.__raiz
+        while actual.get_derecho() is not None:
+            actual = actual.get_derecho()
+        return actual.get_dato()
+
+    # ================================================================
+    # EXPRESIONES (ya lo tenías)
+    # ================================================================
 
     def construir_desde_infija(self, expresion):
         """Construye árbol desde expresión infija. Ej: a + b * c"""
@@ -194,7 +285,7 @@ class ArbolBinario:
         salida, pila = [], []
 
         for t in tokens:
-            if t.isalnum():  # Operando (letra o número)
+            if t.isalnum():
                 salida.append(t)
             elif t == '(':
                 pila.append(t)
@@ -202,7 +293,7 @@ class ArbolBinario:
                 while pila and pila[-1] != '(':
                     salida.append(pila.pop())
                 pila.pop()
-            elif t in prec:  # Operador
+            elif t in prec:
                 while (pila and pila[-1] != '('
                        and prec.get(pila[-1], 0) >= prec[t]):
                     salida.append(pila.pop())
@@ -230,10 +321,6 @@ class ArbolBinario:
             return 0
         return 1 + self._contar(nodo.get_izquierdo()) \
             + self._contar(nodo.get_derecho())
-
-    # ==========================================
-    # EXPRESIONES (USAMOS LOS DE ORDEN)
-    # ==========================================
 
     def obtener_postfija(self):
         return " ".join(self.post_orden())
