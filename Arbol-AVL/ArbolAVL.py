@@ -93,7 +93,7 @@ class ArbolAVL:
         return y
 
     # ============================================================
-    # BALANCEAR (el método que pide el profe)
+    # BALANCEAR 
     # ============================================================
     def _balancear(self, nodo: NodoAVL) -> NodoAVL:
         """
@@ -150,7 +150,7 @@ class ArbolAVL:
         return self._balancear(nodo)  # ← Aquí se usa el balanceo
 
     # ============================================================
-    # ELIMINAR (con balanceo) - EL MÉTODO QUE PIDE EL PROFE
+    # ELIMINAR (con balanceo) 
     # ============================================================
     def eliminar(self, valor: int) -> None:
         """
@@ -292,3 +292,26 @@ if __name__ == "__main__":
     print("✅ El árbol se mantiene balanceado automáticamente")
     print("   La altura es O(log n) gracias a las rotaciones")
     print("=" * 60)
+
+
+    avl = ArbolAVL()
+
+    # Insertar valores
+    for v in [50, 30, 70, 20, 40, 60, 80]:
+        avl.insertar(v)
+
+    print("Árbol inicial:")
+    avl.imprimir()
+    print(f"Inorden: {avl.inorden()}\n")
+
+    # Eliminar un valor
+    avl.eliminar(30)
+    print("Después de eliminar 30:")
+    avl.imprimir()
+    print(f"Inorden: {avl.inorden()}\n")
+
+    # Eliminar otro valor
+    avl.eliminar(50)
+    print("Después de eliminar 50:")
+    avl.imprimir()
+    print(f"Inorden: {avl.inorden()}")

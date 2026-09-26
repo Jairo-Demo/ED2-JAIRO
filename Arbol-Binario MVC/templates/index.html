@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Árbol Binario - Interfaz Web</title>
+    <!--
+        VISTA (capa "V" de MVC).
+        Este HTML NO conoce a la clase ArbolBinario directamente: solo
+        recibe variables ya preparadas por el Controlador (app.py), como
+        "raiz", "cantidad", "in_orden", etc. Eso es lo que hace que esto
+        sea una Vista y no una mezcla de Vista+Controlador.
+
+        url_for('static', filename='style.css') genera la ruta correcta
+        hacia static/style.css sin tener que escribirla a mano.
+    -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Árbol Binario de Búsqueda</h1>
+        <p>Interfaz web con Flask para llamar a los métodos de la clase ArbolBinario</p>
+    </header>
+
+    <!--
+        MENSAJES FLASH
+        get_flashed_messages(with_categories=true) recupera los mensajes
+        que el Controlador guardó con flash("texto", "ok"/"error") antes
+        de hacer el redirect(). "with_categories=true" nos da también la
+        categoría ("ok" o "error"), que usamos como clase CSS para
+        pintar el mensaje de verde o de rojo (ver style.css).
+        Estos mensajes se muestran UNA sola vez y luego desaparecen.
+    -->
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div class="mensajes">
+                {% for categoria, texto in mensajes %}
+                    <p class="mensaje {{ categoria }}">{{ texto }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!--
+        PANEL DE ACCIONES
+        Cada formulario es independiente y apunta a UNA ruta distinta
+        del Controlador mediante su atributo "action", generado con
+        la función url_for de Flask. Al enviar el formulario, el
+        navegador hace un POST con el valor del campo de texto bajo
+        el nombre "valor" (name="valor"), que en app.py se lee con
+        request.form.get("valor"). No hay JavaScript: la interacción
+        es 100% HTTP tradicional (por eso cada botón recarga la página).
+    -->
+    <section class="panel-acciones">
+        <!-- Formulario: Insertar un valor en el árbol -->
+        <form action="{{ url_for('insertar') }}" method="post" class="form-accion">
+            <label for="valor-insertar">Insertar:</label>
+            <input type="number" id="valor-insertar" name="valor" required>
+            <button type="submit">Insertar</button>
+        </form>
+
+        <!-- Formulario: Buscar un valor (llama a arbol.buscar en el Controlador) -->
+        <form action="{{ url_for('buscar') }}" method="post" class="form-accion">
+            <label for="valor-buscar">Buscar:</label>
+            <input type="number" id="valor-buscar" name="valor" required>
+            <button type="submit">Buscar</button>
+        </form>
+
+        <!-- Formulario: Eliminar un valor (usa el sucesor inorden del Modelo) -->
+        <form action="{{ url_for('eliminar') }}" method="post" class="form-accion">
+            <label for="valor-eliminar">Eliminar:</label>
+            <input type="number" id="valor-eliminar" name="valor" required>
+            <button type="submit">Eliminar</button>
+        </form>
+
+        <!--
+            Formulario: Reiniciar. No necesita <input> porque no manda
+            ningún valor, solo dispara la ruta /reiniciar.
+            La clase "boton-peligro" solo cambia el color (ver CSS),
+            para advertir visualmente que esta acción borra todo.
+        -->
+        <form action="{{ url_for('reiniciar') }}" method="post" class="form-accion">
+            <button type="submit" class="boton-peligro">Reiniciar árbol</button>
+        </form>
+    </section>
+
+    <!--
+        PANEL DE INFORMACIÓN
+        Aquí solo se muestran valores que el Controlador ya calculó
+        llamando a los métodos del Modelo (esta_vacio, get_cantidad,
+        minimo, maximo, in_orden, pre_orden, post_orden). La Vista
+        no hace ningún cálculo, solo los imprime.
+        "minimo if minimo is not none else '-'" evita mostrar "None"
+        cuando el árbol está vacío (recuerda que en app.py minimo()
+        se evita por completo si el árbol está vacío).
+    -->
+    <section class="panel-info">
+        <p><strong>¿Está vacío?</strong> {{ "Sí" if vacio else "No" }}</p>
+        <p><strong>Cantidad de nodos:</strong> {{ cantidad }}</p>
+        <p><strong>Mínimo:</strong> {{ minimo if minimo is not none else "-" }}</p>
+        <p><strong>Máximo:</strong> {{ maximo if maximo is not none else "-" }}</p>
+        <p><strong>InOrden:</strong> {{ in_orden }}</p>
+        <p><strong>PreOrden:</strong> {{ pre_orden }}</p>
+        <p><strong>PostOrden:</strong> {{ post_orden }}</p>
+    </section>
+
+    <!--
+        PANEL: REPRESENTACIÓN GRÁFICA DEL ÁRBOL
+        "raiz" es el diccionario que arma nodo_a_dict() en app.py a
+        partir del objeto Nodo real (el Modelo). Aquí NUNCA se toca
+        el Modelo: solo se recorre el diccionario ya traducido.
+    -->
+    <section class="panel-arbol">
+        <h2>Representación gráfica</h2>
+        {% if raiz is none %}
+            <p class="arbol-vacio">El árbol está vacío. Inserta un valor para empezar.</p>
+        {% else %}
+            <!--
+                MACRO RECURSIVO dibujar_nodo(nodo)
+                Un macro de Jinja2 es como una "función" que devuelve
+                HTML. Aquí se llama a sí mismo (recursión) para dibujar
+                cada nodo y luego, dentro de un <ul>, sus dos hijos.
+
+                ¿Por qué siempre se generan DOS <li> (izquierdo y
+                derecho) aunque un hijo no exista?
+                Porque el truco CSS que dibuja las líneas del árbol
+                (ver ".tree li::before/::after" en style.css) depende
+                de que cada nodo con hijos tenga exactamente 2 <li>
+                para que las líneas salgan simétricas a la izquierda y
+                a la derecha. Si omitiéramos el <li> del lado vacío,
+                el hijo que sí existe se movería al centro y ya no se
+                podría saber si era el hijo izquierdo o el derecho.
+
+                Por eso, cuando un hijo es None, en vez de omitir el
+                <li> se dibuja:
+                  - la clase "vacio" en el <li> (vuelve invisibles las
+                    líneas conectoras de ese lado, ver CSS),
+                  - un <span class="nodo nodo-vacio"> (un círculo
+                    invisible, solo para "ocupar el espacio").
+            -->
+            {% macro dibujar_nodo(nodo) %}
+                <li>
+                    <span class="nodo">{{ nodo.valor }}</span>
+                    {% if nodo.izquierdo is not none or nodo.derecho is not none %}
+                        <ul>
+                            <!-- Hijo IZQUIERDO (real o placeholder invisible) -->
+                            <li class="{{ 'vacio' if nodo.izquierdo is none }}">
+                                {% if nodo.izquierdo is not none %}
+                                    <ul>{{ dibujar_nodo(nodo.izquierdo) }}</ul>
+                                {% else %}
+                                    <span class="nodo nodo-vacio">&nbsp;</span>
+                                {% endif %}
+                            </li>
+                            <!-- Hijo DERECHO (real o placeholder invisible) -->
+                            <li class="{{ 'vacio' if nodo.derecho is none }}">
+                                {% if nodo.derecho is not none %}
+                                    <ul>{{ dibujar_nodo(nodo.derecho) }}</ul>
+                                {% else %}
+                                    <span class="nodo nodo-vacio">&nbsp;</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    {% endif %}
+                </li>
+            {% endmacro %}
+            <!-- Se llama al macro una sola vez, empezando desde la raíz -->
+            <div class="tree">
+                <ul>{{ dibujar_nodo(raiz) }}</ul>
+            </div>
+        {% endif %}
+    </section>
+</body>
+</html>

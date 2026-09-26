@@ -1,0 +1,283 @@
+/* ====================================================================
+   static/style.css
+   VISTA (capa "V" de MVC): estilos de la interfaz web del Árbol Binario.
+
+   Este archivo NO contiene lógica del árbol ni de Flask, solo
+   apariencia. Está organizado en bloques: reset básico, encabezado,
+   mensajes flash, panel de acciones (formularios), panel de
+   información y, al final, el bloque más importante: el dibujo del
+   árbol usando solo CSS (sin librerías de gráficos ni JavaScript).
+   ==================================================================== */
+
+/* Reset simple: hace que padding/border no aumenten el ancho final
+   de ningún elemento (más fácil de calcular medidas). */
+* {
+    box-sizing: border-box;
+}
+
+/* Estilo general de la página: fuente, color de fondo y márgenes. */
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f4f6f8;
+    color: #222;
+    margin: 0;
+    padding: 0 20px 40px;
+}
+
+/* ---- Encabezado (título e instrucción breve) ---- */
+
+header {
+    text-align: center;
+    padding: 24px 0 10px;
+}
+
+header h1 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+header p {
+    margin: 6px 0 0;
+    color: #666;
+}
+
+/* ---- Mensajes flash (los que manda flash() desde app.py) ---- */
+
+.mensajes {
+    max-width: 700px;
+    margin: 10px auto;
+}
+
+.mensaje {
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin: 6px 0;
+    font-weight: bold;
+}
+
+/* Mensaje de éxito: fondo/verde (categoría "ok" en flash("...", "ok")) */
+.mensaje.ok {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* Mensaje de error: fondo/rojo (categoría "error") */
+.mensaje.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* ---- Panel de acciones: los 4 formularios (Insertar/Buscar/
+   Eliminar/Reiniciar). flex + gap + wrap los acomoda en fila y los
+   baja de línea automáticamente en pantallas angostas. ---- */
+
+.panel-acciones {
+    max-width: 900px;
+    margin: 20px auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Cada formulario se ve como una pequeña "tarjeta" blanca. */
+.form-accion {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.form-accion input[type="number"] {
+    width: 90px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.form-accion button {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    background: #2c7be5;
+    color: white;
+    cursor: pointer;
+}
+
+.form-accion button:hover {
+    background: #1a5fb4;
+}
+
+/* Botón rojo del formulario "Reiniciar" (advierte que borra todo).
+   Usa !important para vencer al color azul general de .form-accion
+   button, ya que ambas reglas aplican al mismo botón. */
+.boton-peligro {
+    background: #d9534f !important;
+}
+
+.boton-peligro:hover {
+    background: #b52b27 !important;
+}
+
+/* ---- Panel de información: vacío/cantidad/mínimo/máximo/recorridos --- */
+
+.panel-info {
+    max-width: 900px;
+    margin: 20px auto;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.panel-info p {
+    margin: 6px 0;
+}
+
+/* ---- Panel donde se dibuja el árbol ---- */
+
+.panel-arbol {
+    max-width: 1100px;
+    margin: 24px auto;
+    text-align: center;
+}
+
+/* Mensaje que se muestra cuando el árbol no tiene nodos. */
+.arbol-vacio {
+    color: #888;
+    font-style: italic;
+}
+
+/* ====================================================================
+   REPRESENTACIÓN GRÁFICA DEL ÁRBOL (técnica "organigrama" con CSS)
+   ====================================================================
+   Idea general: el HTML es una lista anidada <ul><li>...</li></ul>,
+   donde cada <li> es un nodo y su <ul> interno contiene sus hijos.
+   Las "líneas" que conectan un nodo con sus hijos NO son imágenes ni
+   SVG: son bordes (border-top/border-left) dibujados con los
+   pseudo-elementos ::before y ::after de cada <li>. Esto es un truco
+   clásico de CSS conocido como "pure CSS org chart / tree".
+   ==================================================================== */
+
+/* Contenedor con scroll horizontal por si el árbol crece mucho. */
+.tree {
+    overflow-x: auto;
+    padding: 20px 0;
+}
+
+/* Cada nivel del árbol es una fila horizontal centrada (flex). */
+.tree ul {
+    padding-top: 20px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+}
+
+/* Cada nodo (<li>) se centra y deja espacio arriba para la línea
+   que lo conecta con su padre. position: relative es necesario
+   para que ::before/::after (position: absolute) se ubiquen
+   relativos a ESTE <li> y no a toda la página. */
+.tree li {
+    list-style-type: none;
+    text-align: center;
+    position: relative;
+    padding: 20px 10px 0 10px;
+}
+
+/* ::before dibuja la MITAD IZQUIERDA de la línea horizontal que une
+   a los dos hermanos, y ::after la MITAD DERECHA. Juntas forman una
+   sola línea horizontal continua entre los dos <li> hijos. */
+.tree li::before,
+.tree li::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 50%;
+    border-top: 2px solid #b0b8c1;
+    width: 50%;
+    height: 20px;
+}
+
+/* ::after es la mitad derecha: además de la línea horizontal, baja
+   una línea vertical (border-left) hacia el nodo hijo. */
+.tree li::after {
+    right: auto;
+    left: 50%;
+    border-left: 2px solid #b0b8c1;
+}
+
+/* Si un <li> es hijo ÚNICO (:only-child, es decir, el nodo padre no
+   tiene el otro <li> hermano visible en este nivel), no necesita
+   líneas de "bifurcación": se oculta ::before/::after y se quita el
+   padding superior extra. (En nuestro caso esto casi no se activa
+   porque siempre generamos 2 <li>, pero se deja por robustez). */
+.tree li:only-child::before,
+.tree li:only-child::after {
+    display: none;
+}
+
+.tree li:only-child {
+    padding-top: 0;
+}
+
+/* El primer <li> de una fila no necesita línea hacia la izquierda,
+   y el último <li> no necesita línea hacia la derecha (si no,
+   sobrarían líneas apuntando "hacia la nada" en los extremos). */
+.tree li:first-child::before,
+.tree li:last-child::after {
+    border: 0 none;
+}
+
+/* Redondea la esquina de la línea en los extremos de cada fila,
+   para que la unión con el padre se vea prolija (como un organigrama
+   real) en vez de en ángulo recto. */
+.tree li:last-child::before {
+    border-right: 2px solid #b0b8c1;
+    border-radius: 0 6px 0 0;
+}
+
+.tree li:first-child::after {
+    border-radius: 6px 0 0 0;
+}
+
+/* Los <li> marcados con clase "vacio" representan un hijo que NO
+   existe (None en el árbol real). Se les quita el color del borde
+   (border-color: transparent) para que sus líneas conectoras se
+   vuelvan invisibles, aunque el <li> siga ocupando espacio y
+   mantenga la simetría del dibujo. */
+.tree li.vacio::before,
+.tree li.vacio::after {
+    border-color: transparent;
+}
+
+/* Círculo azul que representa un nodo real del árbol (el valor
+   numérico se muestra dentro, ej: 50). */
+.nodo {
+    display: inline-block;
+    min-width: 34px;
+    padding: 8px 10px;
+    border: 2px solid #2c7be5;
+    border-radius: 50%;
+    background: white;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* Nodo "placeholder": se usa cuando un hijo es None. Se hace
+   completamente invisible (borde y fondo transparentes, texto
+   transparente) pero mantiene el mismo tamaño que un .nodo real,
+   de modo que el espacio y la simetría izquierda/derecha del árbol
+   se conserven aunque no haya nada que mostrar ahí. */
+.nodo-vacio {
+    border-color: transparent;
+    background: transparent;
+    color: transparent;
+}
