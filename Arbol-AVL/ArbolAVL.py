@@ -269,7 +269,7 @@ class ArbolAVL:
 
 
 # ============================================================
-# PRUEBA COMPLETA
+# PRUEBA BALANCEO AUTOMÁTICO
 # ============================================================
 if __name__ == "__main__":
    
@@ -293,7 +293,9 @@ if __name__ == "__main__":
     print("   La altura es O(log n) gracias a las rotaciones")
     print("=" * 60)
 
-
+# ============================================================
+# PRUEBA ELIMINAR CON BALANCEO
+# ============================================================
     avl = ArbolAVL()
 
     # Insertar valores
