@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estructuras de Datos II - Árbol Binario & Árbol M-Vías</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+    <header class="top-header">
+        <div class="header-content">
+            <h1>Estructuras de Datos II</h1>
+            <p class="subtitle">Panel Interactivo: Árbol Binario & Árbol M-Vías</p>
+        </div>
+    </header>
+
+    <!-- MENSAJES FLASH GLOBALES -->
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div class="mensajes-container">
+                {% for categoria, texto in mensajes %}
+                    <div class="alerta {{ categoria }}">{{ texto }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="dashboard-grid">
+        <!-- ========================================================= -->
+        <!-- PANEL IZQUIERDO: ÁRBOL BINARIO                            -->
+        <!-- ========================================================= -->
+        <section class="panel panel-binario" id="panel-binario">
+            <div class="panel-header">
+                <div class="titulo-con-icono">
+                    <span class="icono">🌳</span>
+                    <div>
+                        <h2>Árbol Binario de Búsqueda</h2>
+                        <span class="subtag">Máximo 2 hijos por nodo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Binario -->
+            <div class="acciones-bar">
+                <form action="{{ url_for('binario_insertar') }}" method="post" class="mini-form">
+                    <input type="number" name="valor" placeholder="Valor" required>
+                    <button type="submit" class="btn btn-primary">Insertar</button>
+                </form>
+
+                <form action="{{ url_for('binario_buscar') }}" method="post" class="mini-form">
+                    <input type="number" name="valor" placeholder="Valor" required>
+                    <button type="submit" class="btn btn-secondary">Buscar</button>
+                </form>
+
+                <form action="{{ url_for('binario_eliminar') }}" method="post" class="mini-form">
+                    <input type="number" name="valor" placeholder="Valor" required>
+                    <button type="submit" class="btn btn-warning">Eliminar</button>
+                </form>
+
+                <form action="{{ url_for('binario_reiniciar') }}" method="post" class="mini-form">
+                    <button type="submit" class="btn btn-danger">Reiniciar</button>
+                </form>
+            </div>
+
+            <!-- Métricas / Datos rápidos Binario -->
+            <div class="metricas-bar">
+                <div class="metrica-chip">
+                    <span class="label">Nodos</span>
+                    <span class="valor">{{ binario.cantidad }}</span>
+                </div>
+                <div class="metrica-chip">
+                    <span class="label">¿Vacío?</span>
+                    <span class="valor">{{ "Sí" if binario.vacio else "No" }}</span>
+                </div>
+                <div class="metrica-chip">
+                    <span class="label">Mínimo</span>
+                    <span class="valor">{{ binario.minimo if binario.minimo is not none else "-" }}</span>
+                </div>
+                <div class="metrica-chip">
+                    <span class="label">Máximo</span>
+                    <span class="valor">{{ binario.maximo if binario.maximo is not none else "-" }}</span>
+                </div>
+            </div>
+
+            <!-- Recorridos Binario -->
+            <div class="recorridos-box">
+                <div class="recorrido-item"><strong>InOrden:</strong> <span>{{ binario.in_orden }}</span></div>
+                <div class="recorrido-item"><strong>PreOrden:</strong> <span>{{ binario.pre_orden }}</span></div>
+                <div class="recorrido-item"><strong>PostOrden:</strong> <span>{{ binario.post_orden }}</span></div>
+            </div>
+
+            <!-- Visualización Gráfica Binario -->
+            <div class="visualizador-box">
+                <h3 class="seccion-subtitulo">Visualización Gráfica</h3>
+                {% if binario.raiz is none %}
+                    <p class="estado-vacio">El árbol binario está vacío. Inserta un valor para dibujarlo.</p>
+                {% else %}
+                    {% macro dibujar_nodo_binario(nodo) %}
+                        <li>
+                            <span class="nodo-binario">{{ nodo.valor }}</span>
+                            {% if nodo.izquierdo is not none or nodo.derecho is not none %}
+                                <ul>
+                                    <li class="{{ 'vacio' if nodo.izquierdo is none }}">
+                                        {% if nodo.izquierdo is not none %}
+                                            <ul>{{ dibujar_nodo_binario(nodo.izquierdo) }}</ul>
+                                        {% else %}
+                                            <span class="nodo-vacio">&nbsp;</span>
+                                        {% endif %}
+                                    </li>
+                                    <li class="{{ 'vacio' if nodo.derecho is none }}">
+                                        {% if nodo.derecho is not none %}
+                                            <ul>{{ dibujar_nodo_binario(nodo.derecho) }}</ul>
+                                        {% else %}
+                                            <span class="nodo-vacio">&nbsp;</span>
+                                        {% endif %}
+                                    </li>
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endmacro %}
+
+                    <div class="tree tree-binario">
+                        <ul>{{ dibujar_nodo_binario(binario.raiz) }}</ul>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- PANEL DERECHO: ÁRBOL M-VÍAS                               -->
+        <!-- ========================================================= -->
+        <section class="panel panel-mvias" id="panel-mvias">
+            <div class="panel-header">
+                <div class="titulo-con-icono">
+                    <span class="icono">🌿</span>
+                    <div>
+                        <h2>Árbol M-Vías de Búsqueda</h2>
+                        <span class="subtag">Hasta {{ mvias.orden - 1 }} claves y {{ mvias.orden }} hijos por nodo</span>
+                    </div>
+                </div>
+
+                <!-- Selector de Orden M -->
+                <form action="{{ url_for('mvias_orden') }}" method="post" class="orden-form">
+                    <label for="orden-sel">Orden (M):</label>
+                    <input type="number" id="orden-sel" name="orden" min="2" max="6" value="{{ mvias.orden }}" required>
+                    <button type="submit" class="btn btn-sm">Fijar</button>
+                </form>
+            </div>
+
+            <!-- Acciones M-Vías -->
+            <div class="acciones-bar">
+                <form action="{{ url_for('mvias_insertar') }}" method="post" class="mini-form flex-grow">
+                    <input type="text" name="valor" placeholder="Ej: 50 ó 10,20,30" required>
+                    <button type="submit" class="btn btn-emerald">Insertar</button>
+                </form>
+
+                <form action="{{ url_for('mvias_buscar') }}" method="post" class="mini-form">
+                    <input type="number" name="valor" placeholder="Clave" required>
+                    <button type="submit" class="btn btn-secondary">Buscar</button>
+                </form>
+
+                <form action="{{ url_for('mvias_reiniciar') }}" method="post" class="mini-form">
+                    <button type="submit" class="btn btn-danger">Reiniciar</button>
+                </form>
+            </div>
+
+            <!-- Métricas / Datos rápidos M-Vías -->
+            <div class="metricas-bar">
+                <div class="metrica-chip">
+                    <span class="label">Orden M</span>
+                    <span class="valor">{{ mvias.orden }}</span>
+                </div>
+                <div class="metrica-chip">
+                    <span class="label">Claves</span>
+                    <span class="valor">{{ mvias.total_claves }}</span>
+                </div>
+                <div class="metrica-chip">
+                    <span class="label">Altura</span>
+                    <span class="valor">{{ mvias.altura }}</span>
+                </div>
+                <div class="metrica-chip">
+                    <span class="label">Mín / Máx</span>
+                    <span class="valor">{{ mvias.minimo if mvias.minimo is not none else "-" }} / {{ mvias.maximo if mvias.maximo is not none else "-" }}</span>
+                </div>
+            </div>
+
+            <!-- Recorridos M-Vías -->
+            <div class="recorridos-box">
+                <div class="recorrido-item"><strong>En-Orden:</strong> <span>{{ mvias.en_orden }}</span></div>
+                <div class="recorrido-item"><strong>Pre-Orden:</strong> <span>{{ mvias.pre_orden }}</span></div>
+                <div class="recorrido-item"><strong>Post-Orden:</strong> <span>{{ mvias.post_orden }}</span></div>
+                <div class="recorrido-item"><strong>Por Niveles:</strong> <span>{{ mvias.por_niveles }}</span></div>
+            </div>
+
+            <!-- Visualización Gráfica M-Vías -->
+            <div class="visualizador-box">
+                <h3 class="seccion-subtitulo">Estructura por Niveles</h3>
+                <div class="niveles-caja">
+                    {% for linea in mvias.niveles_texto %}
+                        <div class="nivel-fila">{{ linea }}</div>
+                    {% endfor %}
+                </div>
+
+                <h3 class="seccion-subtitulo">Visualización Gráfica</h3>
+                {% if mvias.raiz is none %}
+                    <p class="estado-vacio">El árbol M-Vías está vacío. Inserta claves para dibujarlo.</p>
+                {% else %}
+                    {% macro dibujar_nodo_mvias(nodo) %}
+                        <li>
+                            <div class="nodo-mvias">
+                                {% for k in nodo.claves %}
+                                    <span class="clave">{{ k }}</span>
+                                    {% if not loop.last %}<span class="sep">|</span>{% endif %}
+                                {% endfor %}
+                            </div>
+                            {% if nodo.tiene_hijos %}
+                                <ul>
+                                    {% for hijo in nodo.hijos %}
+                                        {% if hijo is not none %}
+                                            {{ dibujar_nodo_mvias(hijo) }}
+                                        {% else %}
+                                            <li class="vacio"><span class="nodo-vacio">&nbsp;</span></li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endmacro %}
+
+                    <div class="tree tree-mvias">
+                        <ul>
+                            {{ dibujar_nodo_mvias(mvias.raiz) }}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+

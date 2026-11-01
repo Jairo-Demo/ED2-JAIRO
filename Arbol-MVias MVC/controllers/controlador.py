@@ -1,5 +1,9 @@
-from arbol_mvias import ArbolMVias
-from vista import VistaConsola
+try:
+    from models.arbol_mvias import ArbolMVias
+    from views.vista import VistaConsola
+except (ImportError, ValueError):
+    from arbol_mvias import ArbolMVias
+    from vista import VistaConsola
 
 class Controlador:
     """

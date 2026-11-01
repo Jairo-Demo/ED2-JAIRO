@@ -1,4 +1,8 @@
-from nodo_mvias import NodoMVias
+try:
+    from .nodo_mvias import NodoMVias
+except (ImportError, ValueError):
+    from nodo_mvias import NodoMVias
+
 
 class ArbolMVias:
     """

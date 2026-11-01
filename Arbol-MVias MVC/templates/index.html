@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Árbol M-Vías - MVC Web</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>🌿 Árbol M-Vías de Búsqueda (Orden M = {{ orden }})</h1>
+        <p>Cada nodo almacena hasta {{ orden - 1 }} claves y tiene hasta {{ orden }} hijos</p>
+    </header>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div class="mensajes">
+                {% for categoria, texto in mensajes %}
+                    <p class="mensaje {{ categoria }}">{{ texto }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <section class="panel-acciones">
+        <!-- Cambiar Orden -->
+        <form action="{{ url_for('cambiar_orden') }}" method="post" class="form-accion">
+            <label for="orden-input">Orden (M):</label>
+            <input type="number" id="orden-input" name="orden" min="2" max="6" value="{{ orden }}" required>
+            <button type="submit">Cambiar Orden</button>
+        </form>
+
+        <!-- Insertar -->
+        <form action="{{ url_for('insertar') }}" method="post" class="form-accion">
+            <label for="valor-insertar">Insertar:</label>
+            <input type="text" id="valor-insertar" name="valor" placeholder="Ej: 50 o 10,20,30" required>
+            <button type="submit">Insertar</button>
+        </form>
+
+        <!-- Buscar -->
+        <form action="{{ url_for('buscar') }}" method="post" class="form-accion">
+            <label for="valor-buscar">Buscar:</label>
+            <input type="number" id="valor-buscar" name="valor" placeholder="Número" required>
+            <button type="submit">Buscar</button>
+        </form>
+
+        <!-- Reiniciar -->
+        <form action="{{ url_for('reiniciar') }}" method="post" class="form-accion">
+            <button type="submit" class="boton-peligro">Reiniciar árbol</button>
+        </form>
+    </section>
+
+    <section class="panel-info">
+        <p><strong>¿Vacío?</strong> {{ "Sí" if vacio else "No" }}</p>
+        <p><strong>Total claves:</strong> {{ total_claves }}</p>
+        <p><strong>Altura:</strong> {{ altura }}</p>
+        <p><strong>Mínimo:</strong> {{ minimo if minimo is not none else "-" }}</p>
+        <p><strong>Máximo:</strong> {{ maximo if maximo is not none else "-" }}</p>
+        <p><strong>En-Orden:</strong> {{ en_orden }}</p>
+        <p><strong>Pre-Orden:</strong> {{ pre_orden }}</p>
+        <p><strong>Post-Orden:</strong> {{ post_orden }}</p>
+        <p><strong>Por Niveles:</strong> {{ por_niveles }}</p>
+    </section>
+
+    <section class="panel-arbol">
+        <h2>Estructura por Niveles</h2>
+        <div class="niveles-caja">
+            {% for linea in niveles_texto %}
+                <div class="nivel-fila">{{ linea }}</div>
+            {% endfor %}
+        </div>
+
+        <h2>Representación Gráfica</h2>
+        {% if raiz is none %}
+            <p class="arbol-vacio">El árbol está vacío. Inserta claves para comenzar.</p>
+        {% else %}
+            {% macro dibujar_mvias(nodo) %}
+                <li>
+                    <div class="nodo-mvias">
+                        {% for k in nodo.claves %}
+                            <span class="clave">{{ k }}</span>
+                            {% if not loop.last %}<span class="sep">|</span>{% endif %}
+                        {% endfor %}
+                    </div>
+                    {% if nodo.tiene_hijos %}
+                        <ul>
+                            {% for hijo in nodo.hijos %}
+                                {% if hijo is not none %}
+                                    {{ dibujar_mvias(hijo) }}
+                                {% else %}
+                                    <li class="vacio"><span class="nodo-vacio">&nbsp;</span></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </li>
+            {% endmacro %}
+
+            <div class="tree">
+                <ul>
+                    {{ dibujar_mvias(raiz) }}
+                </ul>
+            </div>
+        {% endif %}
+    </section>
+</body>
+</html>
+
