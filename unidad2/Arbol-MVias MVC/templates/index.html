@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Árbol M-Vías</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Vista: solo muestra los datos que le envía app.py -->
+    <h1>Árbol M-Vías de Búsqueda (orden {{ orden }})</h1>
+    <p>Cada nodo guarda hasta {{ orden - 1 }} claves y tiene hasta {{ orden }} hijos.</p>
+
+    <!-- Mensajes enviados con flash() desde app.py -->
+    {% for categoria, texto in get_flashed_messages(with_categories=true) %}
+        <p class="mensaje {{ categoria }}">{{ texto }}</p>
+    {% endfor %}
+
+    <!-- Formularios: cada uno llama a una ruta de app.py -->
+    <div class="acciones">
+        <form action="{{ url_for('cambiar_orden') }}" method="post">
+            <input type="number" name="orden" min="2" max="6" value="{{ orden }}" required>
+            <button type="submit">Cambiar orden</button>
+        </form>
+        <form action="{{ url_for('insertar') }}" method="post">
+            <input type="text" name="valor" placeholder="50 o 10,20,30" required>
+            <button type="submit">Insertar</button>
+        </form>
+        <form action="{{ url_for('buscar') }}" method="post">
+            <input type="number" name="valor" required>
+            <button type="submit">Buscar</button>
+        </form>
+        <form action="{{ url_for('reiniciar') }}" method="post">
+            <button type="submit">Reiniciar árbol</button>
+        </form>
+    </div>
+
+    <!-- Datos calculados por el Modelo -->
+    <table class="datos">
+        <tr><td>Vacío</td><td>{{ "Sí" if vacio else "No" }}</td></tr>
+        <tr><td>Total de claves</td><td>{{ total_claves }}</td></tr>
+        <tr><td>Altura</td><td>{{ altura }}</td></tr>
+        <tr><td>Mínimo</td><td>{{ minimo if minimo is not none else "-" }}</td></tr>
+        <tr><td>Máximo</td><td>{{ maximo if maximo is not none else "-" }}</td></tr>
+        <tr><td>En orden</td><td>{{ en_orden }}</td></tr>
+        <tr><td>Pre orden</td><td>{{ pre_orden }}</td></tr>
+        <tr><td>Post orden</td><td>{{ post_orden }}</td></tr>
+        <tr><td>Por niveles</td><td>{{ por_niveles }}</td></tr>
+    </table>
+
+    <h2>Estructura por niveles</h2>
+    {% for linea in niveles_texto %}
+        <div class="nivel">{{ linea }}</div>
+    {% endfor %}
+
+    <h2>Árbol</h2>
+    {% if raiz is none %}
+        <p>El árbol está vacío.</p>
+    {% else %}
+        {#
+            Macro recursivo: dibuja un nodo con sus claves y, debajo,
+            todos sus hijos. Un hijo que no existe se dibuja como un
+            espacio invisible para mantener las posiciones.
+        #}
+        {% macro dibujar_nodo(nodo) %}
+            <li>
+                <span class="nodo">{{ nodo.claves | join(" | ") }}</span>
+                {% if nodo.tiene_hijos %}
+                    <ul>
+                        {% for hijo in nodo.hijos %}
+                            {% if hijo is not none %}
+                                {{ dibujar_nodo(hijo) }}
+                            {% else %}
+                                <li class="vacio"><span class="nodo">&nbsp;</span></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </li>
+        {% endmacro %}
+        <div class="arbol">
+            <ul>{{ dibujar_nodo(raiz) }}</ul>
+        </div>
+    {% endif %}
+</body>
+</html>

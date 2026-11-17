@@ -1,0 +1,125 @@
+/* Estilos de la página del Árbol M-Vías: lo mínimo necesario. */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+/* Mensajes de flash(): verde si salió bien, rojo si hubo error. */
+.mensaje.ok {
+    color: green;
+}
+
+.mensaje.error {
+    color: red;
+}
+
+/* Formularios en una sola fila. */
+.acciones form {
+    display: inline-block;
+    margin: 0 10px 10px 0;
+}
+
+.acciones input {
+    width: 70px;
+}
+
+/* Tabla con los datos del árbol. */
+.datos td {
+    padding: 2px 10px 2px 0;
+}
+
+/* ----------------------------------------------------------------
+   Dibujo del árbol con listas anidadas <ul><li>.
+   Cada <li> es un nodo; las líneas que lo unen con su padre se
+   dibujan con los bordes de ::before (mitad izquierda) y ::after
+   (mitad derecha y línea vertical).
+   ---------------------------------------------------------------- */
+
+.arbol ul {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0 0 0;
+    margin: 0;
+}
+
+.arbol li {
+    list-style: none;
+    text-align: center;
+    position: relative;
+    padding: 20px 8px 0 8px;
+}
+
+.arbol li::before,
+.arbol li::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 50%;
+    width: 50%;
+    height: 20px;
+    border-top: 1px solid black;
+}
+
+.arbol li::after {
+    right: auto;
+    left: 50%;
+    border-left: 1px solid black;
+}
+
+/* La raíz (hijo único) no lleva líneas hacia arriba. */
+.arbol li:only-child::before,
+.arbol li:only-child::after {
+    display: none;
+}
+
+.arbol li:only-child {
+    padding-top: 0;
+}
+
+/* Los extremos de cada fila no llevan línea hacia afuera. */
+.arbol li:first-child::before,
+.arbol li:last-child::after {
+    border: none;
+}
+
+.arbol li:last-child::before {
+    border-right: 1px solid black;
+}
+
+/* Hijo que no existe: ocupa su lugar pero no se ve. Se ocultan su
+   cuadro y su línea vertical; si está en un extremo, también su
+   parte de la línea horizontal. */
+.arbol li.vacio .nodo {
+    border-color: transparent;
+}
+
+.arbol li.vacio::after {
+    border-left-color: transparent;
+}
+
+.arbol li.vacio:last-child::before {
+    border-right-color: transparent;
+}
+
+.arbol li.vacio:first-child::after,
+.arbol li.vacio:last-child::before {
+    border-top-color: transparent;
+}
+
+.nodo {
+    border-color: transparent;
+}
+
+.nodo {
+    display: inline-block;
+    min-width: 30px;
+    padding: 5px;
+    border: 1px solid black;
+    border-radius: 0;
+}
+
+/* Líneas de la estructura por niveles. */
+.nivel {
+    font-family: monospace;
+}

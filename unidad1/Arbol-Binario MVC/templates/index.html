@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Árbol Binario de Búsqueda</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Vista: solo muestra los datos que le envía app.py -->
+    <h1>Árbol Binario de Búsqueda</h1>
+
+    <!-- Mensajes enviados con flash() desde app.py -->
+    {% for categoria, texto in get_flashed_messages(with_categories=true) %}
+        <p class="mensaje {{ categoria }}">{{ texto }}</p>
+    {% endfor %}
+
+    <!-- Formularios: cada uno llama a una ruta de app.py -->
+    <div class="acciones">
+        <form action="{{ url_for('insertar') }}" method="post">
+            <input type="number" name="valor" required>
+            <button type="submit">Insertar</button>
+        </form>
+        <form action="{{ url_for('buscar') }}" method="post">
+            <input type="number" name="valor" required>
+            <button type="submit">Buscar</button>
+        </form>
+        <form action="{{ url_for('buscar_sucesor') }}" method="post">
+            <input type="number" name="valor" required>
+            <button type="submit">Sucesor</button>
+        </form>
+        <form action="{{ url_for('eliminar') }}" method="post">
+            <input type="number" name="valor" required>
+            <button type="submit">Eliminar</button>
+        </form>
+        <form action="{{ url_for('reiniciar') }}" method="post">
+            <button type="submit">Reiniciar árbol</button>
+        </form>
+    </div>
+
+    <!-- Datos calculados por el Modelo -->
+    <table class="datos">
+        <tr><td>Vacío</td><td>{{ "Sí" if vacio else "No" }}</td></tr>
+        <tr><td>Cantidad de nodos</td><td>{{ cantidad }}</td></tr>
+        <tr><td>Altura</td><td>{{ altura }}</td></tr>
+        <tr><td>Cantidad de hojas</td><td>{{ hojas }}</td></tr>
+        <tr><td>Balanceado</td><td>{{ "Sí" if es_balanceado else "No" }}</td></tr>
+        <tr><td>ABB válido</td><td>{{ "Sí" if es_valido else "No" }}</td></tr>
+        <tr><td>Mínimo</td><td>{{ minimo if minimo is not none else "-" }}</td></tr>
+        <tr><td>Máximo</td><td>{{ maximo if maximo is not none else "-" }}</td></tr>
+        <tr><td>InOrden</td><td>{{ in_orden }}</td></tr>
+        <tr><td>PreOrden</td><td>{{ pre_orden }}</td></tr>
+        <tr><td>PostOrden</td><td>{{ post_orden }}</td></tr>
+        <tr><td>Por niveles</td><td>{{ por_niveles }}</td></tr>
+    </table>
+
+    <h2>Árbol</h2>
+    {% if raiz is none %}
+        <p>El árbol está vacío.</p>
+    {% else %}
+        {#
+            Macro recursivo: dibuja un nodo y, debajo, sus dos hijos.
+            Si falta un hijo se dibuja un espacio invisible (clase "vacio")
+            para que el otro hijo quede en su lado correcto.
+        #}
+        {% macro dibujar_nodo(nodo) %}
+            <li>
+                <span class="nodo">{{ nodo.valor }}</span>
+                {% if nodo.izquierdo is not none or nodo.derecho is not none %}
+                    <ul>
+                        {% for hijo in [nodo.izquierdo, nodo.derecho] %}
+                            {% if hijo is not none %}
+                                {{ dibujar_nodo(hijo) }}
+                            {% else %}
+                                <li class="vacio"><span class="nodo">&nbsp;</span></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </li>
+        {% endmacro %}
+        <div class="arbol">
+            <ul>{{ dibujar_nodo(raiz) }}</ul>
+        </div>
+    {% endif %}
+</body>
+</html>
